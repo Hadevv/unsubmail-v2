@@ -5,6 +5,8 @@
 use anyhow::Result;
 use crate::domain::models::{SenderInfo, EmailAccount};
 use crate::infrastructure::google::gmail_api::GmailClient;
+use crate::domain::analysis;
+use std::io::{self, Write};
 
 /// Scan inbox and return analyzed senders
 pub async fn scan_inbox(
@@ -13,7 +15,6 @@ pub async fn scan_inbox(
     max_messages: usize,
 ) -> Result<Vec<SenderInfo>> {
     use indicatif::{ProgressBar, ProgressStyle};
-    use crate::domain::analysis;
 
     let user_id = &account.email;
     let mut all_message_ids = Vec::new();
@@ -65,9 +66,9 @@ pub async fn scan_inbox(
 }
 
 /// Display scan progress
+#[allow(dead_code)]
 pub fn display_scan_progress(current: usize, total: usize) {
     print!("\rScanning: {}/{}", current, total);
-    use std::io::{self, Write};
     io::stdout().flush().unwrap();
 }
 

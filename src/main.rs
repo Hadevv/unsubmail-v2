@@ -19,11 +19,15 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 #[command(version)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 
     /// Configuration directory
     #[arg(long)]
     config_dir: Option<PathBuf>,
+
+    /// Force interactive mode
+    #[arg(short, long)]
+    interactive: bool,
 }
 
 #[derive(Subcommand)]
@@ -55,6 +59,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Load .env.local file if it exists
+    let _ = dotenvy::from_filename(".env.local");
+
     // Initialize tracing
     tracing_subscriber::registry()
         .with(
@@ -76,7 +83,13 @@ async fn main() -> Result<()> {
     // Create workflow
     let workflow = Workflow::new(config_dir)?;
 
-    match cli.command {
+    // If no command provided OR --interactive flag, run interactive mode
+    if cli.command.is_none() || cli.interactive {
+        return cli::interactive::run_interactive(workflow).await;
+    }
+
+    // Otherwise, run command mode
+    match cli.command.unwrap() {
         Commands::Add => {
             let email = workflow.add_account().await?;
             println!("✓ Account {} added successfully!", email);

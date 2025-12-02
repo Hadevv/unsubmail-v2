@@ -10,37 +10,49 @@ use crate::infrastructure::google::delete::MessageDeleter;
 use crate::infrastructure::network::http_client::HttpClient;
 
 /// Execute cleanup for a single sender
+#[allow(dead_code)]
 pub async fn cleanup_sender(
-    _sender: &SenderInfo,
-    _gmail_client: &GmailClient,
-    _filter_manager: &FilterManager,
-    _deleter: &MessageDeleter,
-    _http_client: &HttpClient,
+    sender: &SenderInfo,
+    gmail_client: &GmailClient,
+    filter_manager: &FilterManager,
+    deleter: &MessageDeleter,
+    http_client: &HttpClient,
 ) -> Result<()> {
+    // TODO: Implement cleanup logic
+    let _ = (sender, gmail_client, filter_manager, deleter, http_client);
     todo!("Execute: unsubscribe (if possible) -> block -> delete")
 }
 
 /// Attempt one-click unsubscribe
+#[allow(dead_code)]
 pub async fn attempt_unsubscribe(
-    _sender: &SenderInfo,
-    _http_client: &HttpClient,
+    sender: &SenderInfo,
+    http_client: &HttpClient,
 ) -> Result<bool> {
+    // TODO: POST to unsubscribe URL
+    let _ = (sender, http_client);
     todo!("POST to List-Unsubscribe-Post URL if available")
 }
 
 /// Block sender via Gmail filter
+#[allow(dead_code)]
 pub async fn block_sender(
-    _sender: &SenderInfo,
-    _filter_manager: &FilterManager,
+    sender: &SenderInfo,
+    filter_manager: &FilterManager,
 ) -> Result<()> {
+    // TODO: Create filter
+    let _ = (sender, filter_manager);
     todo!("Create Gmail filter to auto-trash/spam")
 }
 
 /// Delete all messages from sender
+#[allow(dead_code)]
 pub async fn delete_sender_messages(
-    _sender: &SenderInfo,
-    _deleter: &MessageDeleter,
+    sender: &SenderInfo,
+    deleter: &MessageDeleter,
 ) -> Result<usize> {
+    // TODO: Batch delete
+    let _ = (sender, deleter);
     todo!("Batch delete all messages from this sender")
 }
 

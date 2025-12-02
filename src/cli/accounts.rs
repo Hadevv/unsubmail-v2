@@ -7,17 +7,26 @@ use crate::infrastructure::google::auth::GoogleAuthenticator;
 use crate::infrastructure::storage::json_store::AccountStore;
 
 /// Add a new Gmail account via OAuth2 flow
-pub async fn add_account(_authenticator: &GoogleAuthenticator, _store: &AccountStore) -> Result<String> {
+#[allow(dead_code)]
+pub async fn add_account(authenticator: &GoogleAuthenticator, store: &AccountStore) -> Result<String> {
+    // TODO: Implement OAuth2 flow
+    let _ = (authenticator, store);
     todo!("Implement OAuth2 flow and save account")
 }
 
 /// List all configured accounts
-pub async fn list_accounts(_store: &AccountStore) -> Result<Vec<String>> {
+#[allow(dead_code)]
+pub async fn list_accounts(store: &AccountStore) -> Result<Vec<String>> {
+    // TODO: List accounts from store
+    let _ = store;
     todo!("List all account emails from store")
 }
 
 /// Remove an account
-pub async fn remove_account(_email: &str, _store: &AccountStore) -> Result<()> {
+#[allow(dead_code)]
+pub async fn remove_account(email: &str, store: &AccountStore) -> Result<()> {
+    // TODO: Remove from store and keyring
+    let _ = (email, store);
     todo!("Remove account from store and keyring")
 }
 
