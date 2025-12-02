@@ -10,23 +10,23 @@ use chrono::{DateTime, Utc};
 
 /// Gmail API client
 pub struct GmailClient {
-    hub: Gmail<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
+    hub: Gmail<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>>,
 }
 
 impl GmailClient {
     /// Create new Gmail client
     pub fn new(auth: Auth) -> Self {
-        let hub = Gmail::new(
-            hyper::Client::builder().build(
-                hyper_rustls::HttpsConnectorBuilder::new()
-                    .with_native_roots()
-                    .unwrap()
-                    .https_or_http()
-                    .enable_http1()
-                    .build()
-            ),
-            auth,
-        );
+        let connector = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_native_roots()
+            .unwrap()
+            .https_or_http()
+            .enable_http1()
+            .build();
+
+        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+            .build(connector);
+
+        let hub = Gmail::new(client, auth);
 
         Self { hub }
     }
@@ -127,7 +127,7 @@ fn parse_message_headers(message: Message) -> MessageHeaders {
 }
 
 /// Parse email date header
-fn parse_email_date(date_str: &str) -> Option<DateTime<Utc>> {
+fn parse_email_date(_date_str: &str) -> Option<DateTime<Utc>> {
     // TODO: Implement proper RFC 2822 date parsing
     None
 }

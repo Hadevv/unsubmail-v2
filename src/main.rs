@@ -22,7 +22,7 @@ struct Cli {
     command: Commands,
 
     /// Configuration directory
-    #[arg(long, env = "UNSUBMAIL_CONFIG_DIR")]
+    #[arg(long)]
     config_dir: Option<PathBuf>,
 }
 

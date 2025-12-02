@@ -5,11 +5,9 @@
 use anyhow::{Context, Result};
 use yup_oauth2::{InstalledFlowAuthenticator, InstalledFlowReturnMethod};
 use yup_oauth2::authenticator::Authenticator;
-use yup_oauth2::hyper::client::HttpConnector;
-use yup_oauth2::hyper_rustls::HttpsConnector;
 use std::path::PathBuf;
 
-pub type Auth = Authenticator<HttpsConnector<HttpConnector>>;
+pub type Auth = Authenticator<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>>;
 
 /// Google OAuth2 authenticator
 pub struct GoogleAuthenticator {

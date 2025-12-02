@@ -20,6 +20,11 @@ tokio-stream = "0.1"
 
 # HTTP client
 reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+hyper = { version = "1.0", features = ["client", "http1"] }
+hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
+hyper-rustls = { version = "0.27", features = ["http1", "native-tokio", "ring"], default-features = false }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+ring = "0.17"
 
 # Google OAuth2 & API
 google-gmail1 = "6.0"

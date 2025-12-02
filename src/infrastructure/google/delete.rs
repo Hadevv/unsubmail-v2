@@ -10,23 +10,23 @@ const BATCH_SIZE: usize = 1000; // Gmail API limit
 
 /// Message deleter
 pub struct MessageDeleter {
-    hub: Gmail<hyper_rustls::HttpsConnector<hyper::client::HttpConnector>>,
+    hub: Gmail<hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>>,
 }
 
 impl MessageDeleter {
     /// Create new message deleter
     pub fn new(auth: Auth) -> Self {
-        let hub = Gmail::new(
-            hyper::Client::builder().build(
-                hyper_rustls::HttpsConnectorBuilder::new()
-                    .with_native_roots()
-                    .unwrap()
-                    .https_or_http()
-                    .enable_http1()
-                    .build()
-            ),
-            auth,
-        );
+        let connector = hyper_rustls::HttpsConnectorBuilder::new()
+            .with_native_roots()
+            .unwrap()
+            .https_or_http()
+            .enable_http1()
+            .build();
+
+        let client = hyper_util::client::legacy::Client::builder(hyper_util::rt::TokioExecutor::new())
+            .build(connector);
+
+        let hub = Gmail::new(client, auth);
 
         Self { hub }
     }

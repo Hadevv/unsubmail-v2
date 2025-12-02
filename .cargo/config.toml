@@ -1,0 +1,6 @@
+[build]
+# Force ring crypto instead of aws-lc-rs (which requires cmake)
+rustflags = ["--cfg", "reqwest_unstable"]
+
+[env]
+RUST_BACKTRACE = "1"
