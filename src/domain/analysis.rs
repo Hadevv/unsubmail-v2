@@ -71,7 +71,7 @@ fn is_one_click_unsubscribe(header: &str) -> bool {
 
 /// Calculate newsletter probability score (0.0 - 1.0)
 fn calculate_newsletter_score(sender: &SenderInfo, msg: &MessageHeaders) -> f32 {
-    let mut score = 0.0;
+    let mut score: f32 = 0.0;
 
     // High message count increases score
     if sender.message_count > 5 {
