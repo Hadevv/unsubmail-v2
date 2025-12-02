@@ -28,24 +28,49 @@ impl GoogleAuthenticator {
 
     /// Run OAuth2 flow and return authenticator
     pub async fn authenticate(&self, email: &str) -> Result<Auth> {
+        use std::fs;
+
+        // Ensure token directory exists
+        fs::create_dir_all(&self.token_cache_dir)
+            .context("Failed to create token cache directory")?;
+
         let secret = yup_oauth2::ApplicationSecret {
             client_id: self.client_id.clone(),
             client_secret: self.client_secret.clone(),
             auth_uri: "https://accounts.google.com/o/oauth2/auth".to_string(),
             token_uri: "https://oauth2.googleapis.com/token".to_string(),
+            redirect_uris: vec!["http://localhost:9090".to_string()],
             ..Default::default()
         };
 
-        let token_file = self.token_cache_dir.join(format!("{}.json", email));
+        let token_file = self.token_cache_dir.join(format!("{}.json", email.replace(['@', '.'], "_")));
+
+        println!("🔐 Starting OAuth2 flow...");
+        println!("📝 Your browser will open automatically for authentication");
+        println!("⏳ Please complete the authorization in your browser...");
+        println!();
 
         let auth = InstalledFlowAuthenticator::builder(
             secret,
-            InstalledFlowReturnMethod::HTTPRedirect,
+            InstalledFlowReturnMethod::Interactive,
         )
         .persist_tokens_to_disk(token_file)
         .build()
         .await
         .context("Failed to create authenticator")?;
+
+        // Force token acquisition with required scopes
+        let scopes = &[
+            "https://www.googleapis.com/auth/gmail.readonly",
+            "https://www.googleapis.com/auth/gmail.modify",
+            "https://www.googleapis.com/auth/gmail.settings.basic",
+        ];
+
+        auth.token(scopes)
+            .await
+            .context("Failed to obtain OAuth2 token")?;
+
+        println!("✓ Authentication successful!");
 
         Ok(auth)
     }

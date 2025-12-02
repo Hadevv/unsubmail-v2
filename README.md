@@ -1,16 +1,18 @@
 # UnsubMail v2
 
-A fast, reliable CLI tool to clean your Gmail inbox from newsletters and spam.
+A fast, reliable **interactive CLI** tool to clean your Gmail inbox from newsletters and spam.
 
 ## Features
 
+- 💬 **Interactive Mode** - Guided menu with questions (default mode)
 - 🔐 **Secure OAuth2 Authentication** - Connect your Gmail account safely via Google OAuth2
 - ⚡ **Fast Scanning** - Headers-only scanning for maximum speed
 - 🎯 **Smart Detection** - Automatically detects newsletters and unwanted senders using List-Unsubscribe headers
 - 🚀 **One-Click Unsubscribe** - Automatically unsubscribes when possible
 - 🛡️ **Automatic Blocking** - Creates Gmail filters to block future emails
 - 🗑️ **Batch Deletion** - Efficiently deletes all messages from unwanted senders
-- 📊 **Interactive TUI** - Simple checkbox interface to select senders to clean
+- 📊 **Interactive Selection** - Simple checkbox interface to select senders to clean
+- ⚙️ **Command Mode** - Also available for scripting and automation
 
 ## Prerequisites
 
@@ -52,49 +54,79 @@ Or add them to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
 
 ## Usage
 
-### Add a Gmail Account
+### 🎯 Interactive Mode (Recommended)
+
+Simply run without arguments to launch the interactive menu:
 
 ```bash
-unsubmail add
+cargo run
+# or
+cargo run -- --interactive
+# or
+cargo run -- -i
 ```
 
-This will open your browser to authenticate with Google and grant permissions.
+You'll see a guided menu:
 
-### List Configured Accounts
+```
+🔹 UnsubMail - Nettoyez votre Gmail
 
-```bash
-unsubmail list
+Que voulez-vous faire ?
+❯ ➕ Ajouter un compte Gmail
+  🔍 Scanner une boîte mail
+  🧹 Nettoyer une boîte mail
+  📋 Lister les comptes
+  🚪 Quitter
 ```
 
-### Scan Inbox
+**Navigate** with arrow keys (↑↓), **select** with Enter, **check boxes** with Space.
+
+The interactive mode will:
+- ✅ Guide you step by step
+- ✅ Ask for account selection when needed
+- ✅ Show clear prompts and confirmations
+- ✅ Provide visual feedback (✓ ✗ →)
+
+---
+
+### ⚙️ Command Mode (For Scripts)
+
+You can also use direct commands:
+
+#### Add a Gmail Account
 
 ```bash
-unsubmail scan your-email@gmail.com
+cargo run -- add
 ```
 
-This will:
-- Fetch up to 2000 messages (headers only)
-- Analyze senders and detect newsletters
-- Show top newsletter candidates with scores
+Opens browser for OAuth2 authentication.
 
-### Clean Inbox (Scan + Select + Cleanup)
+#### List Configured Accounts
 
 ```bash
-unsubmail clean your-email@gmail.com
+cargo run -- list
 ```
 
-This will:
-1. Scan your inbox
-2. Show an interactive selection interface
-3. For each selected sender:
-   - Attempt one-click unsubscribe (if available)
-   - Block via Gmail filter (if unsubscribe fails)
-   - Delete all messages from that sender (with confirmation)
-
-### Remove an Account
+#### Scan Inbox
 
 ```bash
-unsubmail remove your-email@gmail.com
+cargo run -- scan your-email@gmail.com
+```
+
+Shows top newsletter candidates with scores.
+
+#### Clean Inbox (Scan + Select + Cleanup)
+
+```bash
+cargo run -- clean your-email@gmail.com
+```
+
+Full cleanup workflow with interactive selection.
+
+#### Remove an Account
+
+```bash
+cargo run -- remove your-email@gmail.com
 ```
 
 ## Project Structure
@@ -164,6 +196,8 @@ Else:
 
 ```bash
 cargo build
+# or optimized release
+cargo build --release
 ```
 
 ### Run Tests
@@ -175,7 +209,27 @@ cargo test
 ### Run with Logging
 
 ```bash
+# Interactive mode with debug logs
+RUST_LOG=unsubmail=debug cargo run
+
+# Command mode with debug logs
 RUST_LOG=unsubmail=debug cargo run -- clean your-email@gmail.com
+```
+
+### Quick Commands
+
+Use the development helpers:
+
+**Windows:**
+```powershell
+.\dev.ps1 run        # Interactive mode
+.\dev.ps1 all        # Run all checks
+```
+
+**Linux/Mac:**
+```bash
+./dev.sh run         # Interactive mode
+make all             # Run all checks
 ```
 
 ## Contributing

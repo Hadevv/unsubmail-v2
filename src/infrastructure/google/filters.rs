@@ -59,6 +59,7 @@ impl FilterManager {
     }
 
     /// Create filter to mark as spam
+    #[allow(dead_code)]
     pub async fn create_spam_filter(&self, user_id: &str, sender_email: &str) -> Result<String> {
         // Similar to trash filter but marks as spam
         self.create_trash_filter(user_id, sender_email).await

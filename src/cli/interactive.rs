@@ -5,6 +5,22 @@
 use anyhow::Result;
 use dialoguer::{Select, theme::ColorfulTheme};
 use crate::application::workflow::Workflow;
+use std::io;
+
+/// Check if an error is a user cancellation (Ctrl+C, ESC, etc.)
+/// Returns true if the error should be treated as a cancellation
+fn is_user_cancellation(error: &anyhow::Error) -> bool {
+    if let Some(io_error) = error.downcast_ref::<io::Error>() {
+        matches!(
+            io_error.kind(),
+            io::ErrorKind::Interrupted | io::ErrorKind::UnexpectedEof
+        )
+    } else {
+        // Check error message for common cancellation patterns
+        let error_msg = error.to_string().to_lowercase();
+        error_msg.contains("interrupted") || error_msg.contains("cancelled")
+    }
+}
 
 /// Main menu options
 #[derive(Debug, Clone, Copy)]
@@ -41,24 +57,64 @@ pub async fn run_interactive(workflow: Workflow) -> Result<()> {
             MainMenuOption::Exit,
         ];
 
-        let selection = Select::with_theme(&ColorfulTheme::default())
+        let selection = match Select::with_theme(&ColorfulTheme::default())
             .with_prompt("Que voulez-vous faire ?")
             .items(&options)
             .default(0)
-            .interact()?;
+            .interact()
+        {
+            Ok(sel) => sel,
+            Err(e) => {
+                // If user cancelled main menu (Ctrl+C), exit gracefully
+                let err = anyhow::Error::from(e);
+                if is_user_cancellation(&err) {
+                    println!("\n👋 À bientôt !\n");
+                    return Ok(());
+                }
+                return Err(err);
+            }
+        };
 
         match options[selection] {
             MainMenuOption::AddAccount => {
-                handle_add_account(&workflow).await?;
+                if let Err(e) = handle_add_account(&workflow).await {
+                    if is_user_cancellation(&e) {
+                        // User cancelled, return to menu
+                        continue;
+                    }
+                    // Other errors should still propagate
+                    return Err(e);
+                }
             }
             MainMenuOption::ScanAccount => {
-                handle_scan_account(&workflow).await?;
+                if let Err(e) = handle_scan_account(&workflow).await {
+                    if is_user_cancellation(&e) {
+                        // User cancelled, return to menu
+                        continue;
+                    }
+                    // Other errors should still propagate
+                    return Err(e);
+                }
             }
             MainMenuOption::CleanAccount => {
-                handle_clean_account(&workflow).await?;
+                if let Err(e) = handle_clean_account(&workflow).await {
+                    if is_user_cancellation(&e) {
+                        // User cancelled, return to menu
+                        continue;
+                    }
+                    // Other errors should still propagate
+                    return Err(e);
+                }
             }
             MainMenuOption::ListAccounts => {
-                handle_list_accounts(&workflow).await?;
+                if let Err(e) = handle_list_accounts(&workflow).await {
+                    if is_user_cancellation(&e) {
+                        // User cancelled, return to menu
+                        continue;
+                    }
+                    // Other errors should still propagate
+                    return Err(e);
+                }
             }
             MainMenuOption::Exit => {
                 println!("\n👋 À bientôt !\n");
@@ -80,7 +136,8 @@ async fn handle_add_account(workflow: &Workflow) -> Result<()> {
 
     let email: String = Input::with_theme(&ColorfulTheme::default())
         .with_prompt("Adresse email Gmail")
-        .interact_text()?;
+        .interact_text()
+        .map_err(|e| anyhow::Error::from(e))?;
 
     println!("\n🔐 Lancement du processus d'authentification...\n");
 
@@ -153,7 +210,18 @@ async fn handle_clean_account(workflow: &Workflow) -> Result<()> {
                 println!("✓ {} expéditeurs trouvés\n", senders.len());
 
                 // Select senders to clean
-                let selections = crate::cli::select::select_senders(&senders)?;
+                let selections = match crate::cli::select::select_senders(&senders) {
+                    Ok(selections) => selections,
+                    Err(e) => {
+                        // If user cancelled selection, return to menu
+                        if is_user_cancellation(&e) {
+                            return Err(e);
+                        }
+                        // Other errors should be handled
+                        eprintln!("\n❌ Erreur lors de la sélection: {}", e);
+                        return Ok(());
+                    }
+                };
 
                 if selections.is_empty() {
                     println!("ℹ Aucun expéditeur sélectionné.");
@@ -240,7 +308,8 @@ async fn select_account(workflow: &Workflow, prompt: &str) -> Result<Option<Stri
         .with_prompt(prompt)
         .items(&emails)
         .default(0)
-        .interact()?;
+        .interact()
+        .map_err(|e| anyhow::Error::from(e))?;
 
     Ok(Some(emails[selection].clone()))
 }
