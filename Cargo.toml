@@ -1,0 +1,54 @@
+[package]
+name = "unsubmail"
+version = "0.1.0"
+edition = "2021"
+authors = ["UnsubMail Contributors"]
+description = "A CLI tool to clean your Gmail inbox from newsletters and spam"
+license = "MIT"
+repository = "https://github.com/yourusername/unsubmail"
+
+[dependencies]
+# CLI & TUI
+clap = { version = "4.5", features = ["derive"] }
+dialoguer = "0.11"
+indicatif = "0.17"
+console = "0.15"
+
+# Async runtime
+tokio = { version = "1.40", features = ["full"] }
+tokio-stream = "0.1"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Google OAuth2 & API
+google-gmail1 = "6.0"
+yup-oauth2 = "11.0"
+
+# Storage
+keyring = "3.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+url = "2.5"
+base64 = "0.22"
+mailparse = "0.15"
+
+[dev-dependencies]
+mockito = "1.5"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
