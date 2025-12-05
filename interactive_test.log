@@ -1,0 +1,8 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.65s
+     Running `target\debug\unsubmail.exe interactive`
+error: unrecognized subcommand 'interactive'
+
+Usage: unsubmail.exe [OPTIONS] [COMMAND]
+
+For more information, try '--help'.
+error: process didn't exit successfully: `target\debug\unsubmail.exe interactive` (exit code: 2)
