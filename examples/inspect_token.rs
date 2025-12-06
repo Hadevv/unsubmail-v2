@@ -1,7 +1,7 @@
 //! Inspect stored OAuth2 token and check if it's valid
 
 use chrono::Utc;
-use std::env;
+use dotenvy::{from_filename, dotenv};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables
