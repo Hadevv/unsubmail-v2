@@ -1,7 +1,7 @@
 //! Main workflow orchestration
 
 use crate::domain::models::*;
-use crate::infrastructure::{imap, network, storage};
+use crate::infrastructure::{storage};
 use anyhow::{Context, Result};
 use chrono::Utc;
 use oauth2::{
