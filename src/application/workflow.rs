@@ -1,7 +1,7 @@
 //! Main workflow orchestration
 
 use crate::domain::models::*;
-use crate::infrastructure::{storage};
+use crate::infrastructure::storage;
 use anyhow::{Context, Result};
 use chrono::Utc;
 use oauth2::{
@@ -20,10 +20,8 @@ const GMAIL_SCOPE: &str = "https://mail.google.com/";
 /// Add account for specific email (OAuth2 flow with browser)
 pub async fn add_account_for_email(email: &str) -> Result<EmailAccount> {
     // Get OAuth2 credentials from environment
-    let client_id = env::var("GOOGLE_CLIENT_ID")
-        .context("GOOGLE_CLIENT_ID not set")?;
-    let client_secret = env::var("GOOGLE_CLIENT_SECRET")
-        .context("GOOGLE_CLIENT_SECRET not set")?;
+    let client_id = env::var("GOOGLE_CLIENT_ID").context("GOOGLE_CLIENT_ID not set")?;
+    let client_secret = env::var("GOOGLE_CLIENT_SECRET").context("GOOGLE_CLIENT_SECRET not set")?;
     let redirect_uri = env::var("GOOGLE_REDIRECT_URI")
         .unwrap_or_else(|_| "http://localhost:9090/callback".to_string());
 
@@ -58,22 +56,24 @@ pub async fn add_account_for_email(email: &str) -> Result<EmailAccount> {
     }
 
     // Start local server to receive callback
-    let listener = TcpListener::bind("127.0.0.1:9090")
-        .context("Failed to bind to localhost:9090")?;
+    let listener =
+        TcpListener::bind("127.0.0.1:9090").context("Failed to bind to localhost:9090")?;
 
     println!("Waiting for authorization...\n");
 
     // Wait for callback
-    let (mut stream, _) = listener.accept()
-        .context("Failed to accept connection")?;
+    let (mut stream, _) = listener.accept().context("Failed to accept connection")?;
 
     let mut reader = BufReader::new(&stream);
     let mut request_line = String::new();
-    reader.read_line(&mut request_line)
+    reader
+        .read_line(&mut request_line)
         .context("Failed to read request")?;
 
     // Parse callback URL
-    let redirect_url = request_line.split_whitespace().nth(1)
+    let redirect_url = request_line
+        .split_whitespace()
+        .nth(1)
         .context("Invalid request line")?;
     let url = Url::parse(&format!("http://localhost:9090{}", redirect_url))
         .context("Failed to parse callback URL")?;
@@ -138,14 +138,12 @@ pub async fn refresh_token_for_email(email: &str) -> Result<OAuth2Token> {
     tracing::debug!("Refreshing token for {}", email);
 
     // Get existing token (which should have refresh_token)
-    let old_token = storage::keyring::get_token(email)?
-        .context("No existing token found for this email")?;
+    let old_token =
+        storage::keyring::get_token(email)?.context("No existing token found for this email")?;
 
     // Get OAuth2 credentials from environment
-    let client_id = env::var("GOOGLE_CLIENT_ID")
-        .context("GOOGLE_CLIENT_ID not set")?;
-    let client_secret = env::var("GOOGLE_CLIENT_SECRET")
-        .context("GOOGLE_CLIENT_SECRET not set")?;
+    let client_id = env::var("GOOGLE_CLIENT_ID").context("GOOGLE_CLIENT_ID not set")?;
+    let client_secret = env::var("GOOGLE_CLIENT_SECRET").context("GOOGLE_CLIENT_SECRET not set")?;
 
     // Create OAuth2 client
     let client = BasicClient::new(
@@ -170,7 +168,10 @@ pub async fn refresh_token_for_email(email: &str) -> Result<OAuth2Token> {
         refresh_token: old_token.refresh_token, // Keep the same refresh token
         expires_at: Utc::now()
             + chrono::Duration::seconds(
-                token_response.expires_in().map(|d| d.as_secs() as i64).unwrap_or(3600)
+                token_response
+                    .expires_in()
+                    .map(|d| d.as_secs() as i64)
+                    .unwrap_or(3600),
             ),
     };
 

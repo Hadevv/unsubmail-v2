@@ -3,7 +3,7 @@
 //! These tests verify that domain logic works correctly in isolation.
 
 use unsubmail::domain::analysis::{
-    calculate_heuristic_score, parse_list_unsubscribe, detect_one_click, analyze_sender,
+    analyze_sender, calculate_heuristic_score, detect_one_click, parse_list_unsubscribe,
 };
 use unsubmail::domain::models::UnsubscribeMethod;
 use unsubmail::domain::planner::{plan_action, plan_actions};
@@ -219,13 +219,15 @@ fn test_email_pattern_matching() {
             assert!(
                 score >= 0.3,
                 "Email '{}' should match pattern (score >= 0.3), got {}",
-                email, score
+                email,
+                score
             );
         } else {
             assert!(
                 score < 0.3,
                 "Email '{}' should not match pattern (score < 0.3), got {}",
-                email, score
+                email,
+                score
             );
         }
     }

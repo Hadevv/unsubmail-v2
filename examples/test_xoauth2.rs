@@ -1,7 +1,7 @@
 //! Test XOAUTH2 authentication format
 
-use unsubmail::infrastructure::imap::auth::build_xoauth2_string;
 use base64::{engine::general_purpose::STANDARD, Engine};
+use unsubmail::infrastructure::imap::auth::build_xoauth2_string;
 
 fn main() {
     let email = "test@gmail.com";
@@ -16,7 +16,10 @@ fn main() {
     let decoded_str = String::from_utf8(decoded).unwrap();
 
     println!("Decoded: {:?}", decoded_str);
-    println!("\nExpected format: user={}\\x01auth=Bearer {}\\x01\\x01", email, token);
+    println!(
+        "\nExpected format: user={}\\x01auth=Bearer {}\\x01\\x01",
+        email, token
+    );
 
     // Show byte representation
     println!("\nByte representation:");

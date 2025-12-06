@@ -19,10 +19,7 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 /// assert!(auth.contains("auth=Bearer ya29.token123"));
 /// ```
 pub fn build_xoauth2_string(email: &str, access_token: &str) -> String {
-    format!(
-        "user={}\x01auth=Bearer {}\x01\x01",
-        email, access_token
-    )
+    format!("user={}\x01auth=Bearer {}\x01\x01", email, access_token)
 }
 
 #[cfg(test)]

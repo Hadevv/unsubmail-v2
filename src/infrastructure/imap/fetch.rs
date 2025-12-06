@@ -53,9 +53,17 @@ pub async fn fetch_headers_batch(
     let mut headers = Vec::new();
 
     // IMPORTANT: Use try_next() instead of next() to properly handle stream termination
-    while let Some(msg) = messages_stream.try_next().await.context("Error reading from fetch stream")? {
-        tracing::trace!("Received FETCH response - UID: {:?}, has header: {}, message: {}",
-            msg.uid, msg.header().is_some(), msg.message);
+    while let Some(msg) = messages_stream
+        .try_next()
+        .await
+        .context("Error reading from fetch stream")?
+    {
+        tracing::trace!(
+            "Received FETCH response - UID: {:?}, has header: {}, message: {}",
+            msg.uid,
+            msg.header().is_some(),
+            msg.message
+        );
 
         // IMPORTANT: Use msg.header() for BODY.PEEK[HEADER] requests, NOT msg.body()
         if let (Some(uid), Some(header_bytes)) = (msg.uid, msg.header()) {
@@ -69,7 +77,11 @@ pub async fn fetch_headers_batch(
                 }
             }
         } else {
-            tracing::warn!("Message missing UID={:?} or header={}", msg.uid, msg.header().is_some());
+            tracing::warn!(
+                "Message missing UID={:?} or header={}",
+                msg.uid,
+                msg.header().is_some()
+            );
         }
     }
 
@@ -84,34 +96,28 @@ pub async fn fetch_all_headers(
     batch_size: usize,
 ) -> Result<Vec<MessageHeader>> {
     let uids = search_all_uids(session).await?;
-    
+
     let mut all_headers = Vec::new();
-    
+
     for chunk in uids.chunks(batch_size) {
         let headers = fetch_headers_batch(session, chunk).await?;
         all_headers.extend(headers);
     }
-    
+
     Ok(all_headers)
 }
 
 /// Parse message header from raw bytes
 fn parse_message_header(uid: u32, raw: &[u8]) -> Result<MessageHeader> {
     let mail = parse_mail(raw).context("Failed to parse email")?;
-    
-    let from = mail
-        .headers
-        .get_first_value("From")
-        .unwrap_or_default();
-    
-    let subject = mail
-        .headers
-        .get_first_value("Subject")
-        .unwrap_or_default();
-    
+
+    let from = mail.headers.get_first_value("From").unwrap_or_default();
+
+    let subject = mail.headers.get_first_value("Subject").unwrap_or_default();
+
     let list_unsubscribe = mail.headers.get_first_value("List-Unsubscribe");
     let list_unsubscribe_post = mail.headers.get_first_value("List-Unsubscribe-Post");
-    
+
     Ok(MessageHeader {
         uid,
         from,
@@ -126,14 +132,14 @@ fn format_uid_set(uids: &[u32]) -> String {
     if uids.is_empty() {
         return String::new();
     }
-    
+
     if uids.len() == 1 {
         return uids[0].to_string();
     }
-    
+
     // Check if consecutive
     let is_consecutive = uids.windows(2).all(|w| w[1] == w[0] + 1);
-    
+
     if is_consecutive {
         format!("{}:{}", uids[0], uids[uids.len() - 1])
     } else {
@@ -146,26 +152,23 @@ fn format_uid_set(uids: &[u32]) -> String {
 
 /// Group headers by sender email
 pub fn group_by_sender(headers: Vec<MessageHeader>) -> HashMap<String, Vec<MessageHeader>> {
-    headers.into_par_iter().fold(
-        HashMap::new,
-        |mut acc, header| {
+    headers
+        .into_par_iter()
+        .fold(HashMap::new, |mut acc, header| {
             let email = extract_email(&header.from);
             acc.entry(email).or_insert_with(Vec::new).push(header);
             acc
-        },
-    ).reduce(
-        HashMap::new,
-        |mut acc, map| {
+        })
+        .reduce(HashMap::new, |mut acc, map| {
             for (email, mut msgs) in map {
                 acc.entry(email).or_insert_with(Vec::new).append(&mut msgs);
             }
             acc
-        },
-    )
+        })
 }
 
 /// Extract email address from From header
-/// 
+///
 /// Examples:
 /// - "John Doe <john@example.com>" -> "john@example.com"
 /// - "john@example.com" -> "john@example.com"
@@ -175,7 +178,7 @@ fn extract_email(from: &str) -> String {
             return from[start + 1..end].to_string();
         }
     }
-    
+
     from.trim().to_string()
 }
 

@@ -16,9 +16,9 @@
 //!   - Use a TEST Gmail account only!
 
 use anyhow::Result;
-use unsubmail::domain::{analysis, planner, models::ActionType};
-use unsubmail::infrastructure::{imap, network, storage};
 use unsubmail::application::workflow;
+use unsubmail::domain::{analysis, models::ActionType, planner};
+use unsubmail::infrastructure::{imap, network, storage};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -76,18 +76,15 @@ async fn main() -> Result<()> {
 
     // Group and analyze
     let grouped = imap::fetch::group_by_sender(headers);
-    let mut senders: Vec<_> = grouped
+    let senders: Vec<_> = grouped
         .into_iter()
         .map(|(email, messages)| {
             let message_count = messages.len();
             let message_uids: Vec<u32> = messages.iter().map(|m| m.uid).collect();
             let first = &messages[0];
             let display_name = extract_display_name(&first.from);
-            let sample_subjects: Vec<String> = messages
-                .iter()
-                .take(3)
-                .map(|m| m.subject.clone())
-                .collect();
+            let sample_subjects: Vec<String> =
+                messages.iter().take(3).map(|m| m.subject.clone()).collect();
 
             analysis::analyze_sender(
                 email,
@@ -107,7 +104,10 @@ async fn main() -> Result<()> {
         .filter(|s| s.heuristic_score > 1.0 || s.unsubscribe_method.is_one_click())
         .collect();
 
-    println!("\nFound {} high-confidence newsletter senders", candidates.len());
+    println!(
+        "\nFound {} high-confidence newsletter senders",
+        candidates.len()
+    );
 
     if candidates.is_empty() {
         println!("No newsletters to clean!");
@@ -120,13 +120,20 @@ async fn main() -> Result<()> {
 
     println!("\nPlanned Actions:");
     for action in &actions {
-        let name = action.sender.display_name.as_ref().unwrap_or(&action.sender.email);
+        let name = action
+            .sender
+            .display_name
+            .as_ref()
+            .unwrap_or(&action.sender.email);
         let action_str = match action.action_type {
             ActionType::UnsubscribeAndDelete => "Unsubscribe + Delete",
             ActionType::SpamAndDelete => "Spam + Delete",
             ActionType::DeleteOnly => "Delete Only",
         };
-        println!("  - {} ({} msgs): {}", name, action.sender.message_count, action_str);
+        println!(
+            "  - {} ({} msgs): {}",
+            name, action.sender.message_count, action_str
+        );
     }
 
     if dry_run {
@@ -141,7 +148,11 @@ async fn main() -> Result<()> {
     let mut total_unsubscribed = 0;
 
     for action in actions {
-        let name = action.sender.display_name.as_ref().unwrap_or(&action.sender.email);
+        let name = action
+            .sender
+            .display_name
+            .as_ref()
+            .unwrap_or(&action.sender.email);
         println!("Processing: {}", name);
 
         // Try to unsubscribe if one-click available

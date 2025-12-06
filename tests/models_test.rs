@@ -4,7 +4,7 @@
 
 use chrono::Utc;
 use unsubmail::domain::models::{
-    EmailAccount, OAuth2Token, UnsubscribeMethod, CleanupResult, ActionType,
+    ActionType, CleanupResult, EmailAccount, OAuth2Token, UnsubscribeMethod,
 };
 
 #[test]

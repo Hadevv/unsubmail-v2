@@ -13,9 +13,9 @@
 //!   - Have a Gmail account to test with (use a test account!)
 
 use anyhow::Result;
+use unsubmail::application::workflow;
 use unsubmail::domain::analysis;
 use unsubmail::infrastructure::{imap, storage};
-use unsubmail::application::workflow;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -28,12 +28,10 @@ async fn main() -> Result<()> {
     println!("================================\n");
 
     // Get email from command line or prompt
-    let email = std::env::args()
-        .nth(1)
-        .unwrap_or_else(|| {
-            println!("Usage: cargo run --example simple_scan <email@gmail.com>");
-            std::process::exit(1);
-        });
+    let email = std::env::args().nth(1).unwrap_or_else(|| {
+        println!("Usage: cargo run --example simple_scan <email@gmail.com>");
+        std::process::exit(1);
+    });
 
     println!("Email: {}\n", email);
 
@@ -73,11 +71,8 @@ async fn main() -> Result<()> {
             let message_uids: Vec<u32> = messages.iter().map(|m| m.uid).collect();
             let first = &messages[0];
             let display_name = extract_display_name(&first.from);
-            let sample_subjects: Vec<String> = messages
-                .iter()
-                .take(3)
-                .map(|m| m.subject.clone())
-                .collect();
+            let sample_subjects: Vec<String> =
+                messages.iter().take(3).map(|m| m.subject.clone()).collect();
 
             analysis::analyze_sender(
                 email,

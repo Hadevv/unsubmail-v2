@@ -26,6 +26,6 @@
 //! - **Type-safe**: Leverage Rust's type system for correctness
 //! - **Single Responsibility**: Each module has one clear purpose
 
-pub mod models;
 pub mod analysis;
+pub mod models;
 pub mod planner;

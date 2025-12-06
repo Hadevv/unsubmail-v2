@@ -16,42 +16,40 @@ struct TokenStore {
 
 /// Store OAuth2 token for an email
 pub fn store_token(email: &str, token: OAuth2Token) -> Result<()> {
-    let mut store: TokenStore = confy::load(APP_NAME, CONFIG_NAME)
-        .context("Failed to load token store")?;
-    
+    let mut store: TokenStore =
+        confy::load(APP_NAME, CONFIG_NAME).context("Failed to load token store")?;
+
     store.tokens.insert(email.to_string(), token);
-    
-    confy::store(APP_NAME, CONFIG_NAME, store)
-        .context("Failed to save token store")?;
-    
+
+    confy::store(APP_NAME, CONFIG_NAME, store).context("Failed to save token store")?;
+
     Ok(())
 }
 
 /// Get OAuth2 token for an email
 pub fn get_token(email: &str) -> Result<Option<OAuth2Token>> {
-    let store: TokenStore = confy::load(APP_NAME, CONFIG_NAME)
-        .context("Failed to load token store")?;
-    
+    let store: TokenStore =
+        confy::load(APP_NAME, CONFIG_NAME).context("Failed to load token store")?;
+
     Ok(store.tokens.get(email).cloned())
 }
 
 /// Delete token for an email
 pub fn delete_token(email: &str) -> Result<()> {
-    let mut store: TokenStore = confy::load(APP_NAME, CONFIG_NAME)
-        .context("Failed to load token store")?;
-    
+    let mut store: TokenStore =
+        confy::load(APP_NAME, CONFIG_NAME).context("Failed to load token store")?;
+
     store.tokens.remove(email);
-    
-    confy::store(APP_NAME, CONFIG_NAME, store)
-        .context("Failed to save token store")?;
-    
+
+    confy::store(APP_NAME, CONFIG_NAME, store).context("Failed to save token store")?;
+
     Ok(())
 }
 
 /// List all emails with stored tokens
 pub fn list_token_emails() -> Result<Vec<String>> {
-    let store: TokenStore = confy::load(APP_NAME, CONFIG_NAME)
-        .context("Failed to load token store")?;
-    
+    let store: TokenStore =
+        confy::load(APP_NAME, CONFIG_NAME).context("Failed to load token store")?;
+
     Ok(store.tokens.keys().cloned().collect())
 }

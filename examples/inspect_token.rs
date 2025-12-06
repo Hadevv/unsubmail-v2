@@ -1,7 +1,6 @@
 //! Inspect stored OAuth2 token and check if it's valid
 
 use chrono::Utc;
-use dotenvy::{from_filename, dotenv};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Load environment variables
@@ -28,9 +27,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Show partial access token (first/last chars only for security)
             let access_token = &token.access_token;
             if access_token.len() > 20 {
-                println!("Access Token: {}...{}",
+                println!(
+                    "Access Token: {}...{}",
                     &access_token[..10],
-                    &access_token[access_token.len()-10..]);
+                    &access_token[access_token.len() - 10..]
+                );
             } else {
                 println!("Access Token: [too short - invalid?]");
             }
@@ -38,9 +39,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // Show partial refresh token
             let refresh_token = &token.refresh_token;
             if refresh_token.len() > 20 {
-                println!("Refresh Token: {}...{}",
+                println!(
+                    "Refresh Token: {}...{}",
                     &refresh_token[..10],
-                    &refresh_token[refresh_token.len()-10..]);
+                    &refresh_token[refresh_token.len() - 10..]
+                );
             } else {
                 println!("Refresh Token: [too short - invalid?]");
             }
@@ -51,7 +54,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if token.is_expired() {
                 println!("\n❌ TOKEN IS EXPIRED!");
-                println!("   Time since expiration: {:?}", Utc::now() - token.expires_at);
+                println!(
+                    "   Time since expiration: {:?}",
+                    Utc::now() - token.expires_at
+                );
                 println!("\n🔧 Action Required:");
                 println!("   1. Delete this token from Windows Credential Manager");
                 println!("   2. Run the main program to get a new token");
@@ -78,7 +84,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if access_token.len() > 100 {
                 println!("✓ Access token length OK ({} chars)", access_token.len());
             } else {
-                println!("⚠️  Access token seems too short ({} chars)", access_token.len());
+                println!(
+                    "⚠️  Access token seems too short ({} chars)",
+                    access_token.len()
+                );
             }
         }
         None => {

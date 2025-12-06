@@ -17,7 +17,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match (&client_id, &client_secret) {
         (Ok(id), Ok(secret)) => {
-            println!("✓ GOOGLE_CLIENT_ID: {}...{}", &id[..20], &id[id.len()-20..]);
+            println!(
+                "✓ GOOGLE_CLIENT_ID: {}...{}",
+                &id[..20],
+                &id[id.len() - 20..]
+            );
             println!("✓ GOOGLE_CLIENT_SECRET: {}***", &secret[..10]);
         }
         _ => {

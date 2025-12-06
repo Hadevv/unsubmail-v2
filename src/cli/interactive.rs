@@ -5,7 +5,7 @@ use crate::domain::models::{SenderInfo, UnsubscribeMethod};
 use crate::infrastructure::{imap, network, storage};
 use anyhow::Result;
 use console::{style, Term};
-use inquire::{Text, Confirm, MultiSelect, Select};
+use inquire::{Confirm, MultiSelect, Select, Text};
 use tracing::info;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -89,10 +89,7 @@ pub async fn run_interactive() -> Result<()> {
         println!();
         let next_action = Select::new(
             "What would you like to do next?",
-            vec![
-                "Switch to a different account",
-                "Exit"
-            ]
+            vec!["Switch to a different account", "Exit"],
         )
         .prompt()?;
 
@@ -121,7 +118,10 @@ fn print_header() {
         style(" v").dim(),
         style(VERSION).dim()
     );
-    println!("{}", style("  Clean your Gmail inbox from newsletters and spam").dim());
+    println!(
+        "{}",
+        style("  Clean your Gmail inbox from newsletters and spam").dim()
+    );
     println!("{}", style("═".repeat(60)).cyan());
     println!();
 }
@@ -142,7 +142,10 @@ async fn get_or_create_token(email: &str) -> Result<String> {
                     return Ok(new_token.access_token);
                 }
                 Err(e) => {
-                    println!("{}", style(format!("Failed to refresh token: {}", e)).yellow());
+                    println!(
+                        "{}",
+                        style(format!("Failed to refresh token: {}", e)).yellow()
+                    );
                     println!("{}", style("Re-authenticating...").dim());
                 }
             }
@@ -171,7 +174,7 @@ async fn scan_inbox(
 
     let mut session = tokio::time::timeout(
         std::time::Duration::from_secs(30),
-        imap::connection::connect_and_auth(email, access_token)
+        imap::connection::connect_and_auth(email, access_token),
     )
     .await
     .map_err(|_| {
@@ -184,10 +187,10 @@ async fn scan_inbox(
 
     pb.set_message("Fetching messages...");
     let headers = imap::fetch::fetch_all_headers(&mut session, 200).await?;
-    
+
     pb.set_message("Analyzing senders...");
     let grouped = imap::fetch::group_by_sender(headers);
-    
+
     let senders: Vec<SenderInfo> = grouped
         .into_iter()
         .map(|(email, messages)| {
@@ -195,12 +198,9 @@ async fn scan_inbox(
             let message_uids: Vec<u32> = messages.iter().map(|m| m.uid).collect();
             let first = &messages[0];
             let display_name = extract_display_name(&first.from);
-            let sample_subjects: Vec<String> = messages
-                .iter()
-                .take(3)
-                .map(|m| m.subject.clone())
-                .collect();
-            
+            let sample_subjects: Vec<String> =
+                messages.iter().take(3).map(|m| m.subject.clone()).collect();
+
             crate::domain::analysis::analyze_sender(
                 email,
                 display_name,
@@ -212,10 +212,10 @@ async fn scan_inbox(
             )
         })
         .collect();
-    
+
     session.logout().await?;
     pb.finish_and_clear();
-    
+
     Ok(senders)
 }
 
@@ -234,10 +234,16 @@ fn display_results(senders: &[SenderInfo]) {
     println!("{}", style("Scan Results").bold().underlined());
     println!();
     println!("  {} unique senders found", senders.len());
-    
-    let with_unsub = senders.iter().filter(|s| s.unsubscribe_method.is_available()).count();
-    let with_one_click = senders.iter().filter(|s| s.unsubscribe_method.is_one_click()).count();
-    
+
+    let with_unsub = senders
+        .iter()
+        .filter(|s| s.unsubscribe_method.is_available())
+        .count();
+    let with_one_click = senders
+        .iter()
+        .filter(|s| s.unsubscribe_method.is_one_click())
+        .count();
+
     println!("  {} with unsubscribe option", with_unsub);
     println!("  {} with one-click unsubscribe", with_one_click);
     println!();
@@ -248,14 +254,15 @@ fn select_senders(senders: &[SenderInfo]) -> Result<Vec<SenderInfo>> {
     // This prevents personal emails from appearing unless they have List-Unsubscribe
     let filtered: Vec<_> = senders
         .iter()
-        .filter(|s| {
-            s.heuristic_score >= 0.6 || s.unsubscribe_method.is_available()
-        })
+        .filter(|s| s.heuristic_score >= 0.6 || s.unsubscribe_method.is_available())
         .cloned()
         .collect();
 
     if filtered.is_empty() {
-        println!("  {} No newsletters or promotional emails detected", style("ℹ").blue());
+        println!(
+            "  {} No newsletters or promotional emails detected",
+            style("ℹ").blue()
+        );
         println!("  All senders appear to be personal or low-volume contacts");
         return Ok(vec![]);
     }
@@ -278,7 +285,10 @@ fn select_senders(senders: &[SenderInfo]) -> Result<Vec<SenderInfo>> {
             } else {
                 "✗ No unsub"
             };
-            format!("{} ({} msgs) {} [score: {:.2}]", name, s.message_count, method, s.heuristic_score)
+            format!(
+                "{} ({} msgs) {} [score: {:.2}]",
+                name, s.message_count, method, s.heuristic_score
+            )
         })
         .collect();
 
@@ -289,21 +299,20 @@ fn select_senders(senders: &[SenderInfo]) -> Result<Vec<SenderInfo>> {
     let selected: Vec<SenderInfo> = selected_strs
         .iter()
         .filter_map(|s| {
-            sorted.iter().find(|sender| {
-                let name = sender.display_name.as_ref().unwrap_or(&sender.email);
-                s.starts_with(name)
-            }).cloned()
+            sorted
+                .iter()
+                .find(|sender| {
+                    let name = sender.display_name.as_ref().unwrap_or(&sender.email);
+                    s.starts_with(name)
+                })
+                .cloned()
         })
         .collect();
 
     Ok(selected)
 }
 
-async fn execute_cleanup(
-    email: &str,
-    access_token: &str,
-    senders: &[SenderInfo],
-) -> Result<()> {
+async fn execute_cleanup(email: &str, access_token: &str, senders: &[SenderInfo]) -> Result<()> {
     info!("Starting cleanup for {} senders", senders.len());
     let mut session = imap::connection::connect_and_auth(email, access_token).await?;
 
@@ -321,11 +330,11 @@ async fn execute_cleanup(
         if has_one_click {
             info!("Sender {} has one-click unsubscribe", sender.email);
             println!("  {} One-click unsubscribe available", style("✓").green());
-            
+
             let unsub = Confirm::new("Unsubscribe from this sender?")
                 .with_default(true)
                 .prompt()?;
-            
+
             if unsub {
                 if let UnsubscribeMethod::OneClick { url } = &sender.unsubscribe_method {
                     info!("Attempting one-click unsubscribe to: {}", url);
@@ -354,7 +363,11 @@ async fn execute_cleanup(
                 .prompt()?;
 
             if block {
-                info!("Moving {} messages to spam for {}", sender.message_uids.len(), sender.email);
+                info!(
+                    "Moving {} messages to spam for {}",
+                    sender.message_uids.len(),
+                    sender.email
+                );
                 match imap::actions::move_to_spam(&mut session, &sender.message_uids).await {
                     Ok(count) => {
                         info!("Successfully moved {} messages to spam", count);
@@ -377,7 +390,11 @@ async fn execute_cleanup(
         .prompt()?;
 
         if delete {
-            info!("Deleting {} messages for {}", sender.message_uids.len(), sender.email);
+            info!(
+                "Deleting {} messages for {}",
+                sender.message_uids.len(),
+                sender.email
+            );
             match imap::actions::delete_messages(&mut session, &sender.message_uids).await {
                 Ok(count) => {
                     info!("Successfully deleted {} messages", count);
@@ -390,15 +407,8 @@ async fn execute_cleanup(
             }
         }
     }
-    
-    session.logout().await?;
-    
-    Ok(())
-}
 
-fn press_enter() {
-    println!();
-    println!("{}", style("Press Enter to exit...").dim());
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input).ok();
+    session.logout().await?;
+
+    Ok(())
 }

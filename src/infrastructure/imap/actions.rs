@@ -89,14 +89,14 @@ fn format_uid_set(uids: &[u32]) -> String {
     if uids.is_empty() {
         return String::new();
     }
-    
+
     if uids.len() == 1 {
         return uids[0].to_string();
     }
-    
+
     // Check if consecutive
     let is_consecutive = uids.windows(2).all(|w| w[1] == w[0] + 1);
-    
+
     if is_consecutive {
         format!("{}:{}", uids[0], uids[uids.len() - 1])
     } else {

@@ -3,7 +3,7 @@
 use super::models::{ActionType, CleanupAction, SenderInfo};
 
 /// Plan cleanup action for a sender
-/// 
+///
 /// Strategy:
 /// 1. If one-click unsubscribe available → UnsubscribeAndDelete
 /// 2. Otherwise → SpamAndDelete
@@ -13,7 +13,7 @@ pub fn plan_action(sender: SenderInfo) -> CleanupAction {
     } else {
         ActionType::SpamAndDelete
     };
-    
+
     CleanupAction {
         sender,
         action_type,
@@ -43,7 +43,7 @@ mod tests {
             heuristic_score: 0.8,
             sample_subjects: vec![],
         };
-        
+
         let action = plan_action(sender);
         assert_eq!(action.action_type, ActionType::UnsubscribeAndDelete);
     }
@@ -59,7 +59,7 @@ mod tests {
             heuristic_score: 0.3,
             sample_subjects: vec![],
         };
-        
+
         let action = plan_action(sender);
         assert_eq!(action.action_type, ActionType::SpamAndDelete);
     }

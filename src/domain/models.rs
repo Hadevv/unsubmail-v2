@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct EmailAccount {
     /// Email address
     pub email: String,
-    
+
     /// When the account was added
     pub added_at: DateTime<Utc>,
 }
@@ -18,22 +18,22 @@ pub struct EmailAccount {
 pub struct SenderInfo {
     /// Sender email address
     pub email: String,
-    
+
     /// Display name (if available)
     pub display_name: Option<String>,
-    
+
     /// Number of messages from this sender
     pub message_count: usize,
-    
+
     /// Message UIDs from this sender
     pub message_uids: Vec<u32>,
-    
+
     /// Unsubscribe method available
     pub unsubscribe_method: UnsubscribeMethod,
-    
+
     /// Heuristic score (0.0 - 1.0+)
     pub heuristic_score: f32,
-    
+
     /// Sample subject lines
     pub sample_subjects: Vec<String>,
 }
@@ -43,13 +43,13 @@ pub struct SenderInfo {
 pub enum UnsubscribeMethod {
     /// One-click HTTP POST unsubscribe
     OneClick { url: String },
-    
+
     /// HTTP link (requires manual click)
     HttpLink { url: String },
-    
+
     /// Mailto link (not supported)
     Mailto { address: String },
-    
+
     /// No unsubscribe method found
     None,
 }
@@ -59,7 +59,7 @@ impl UnsubscribeMethod {
     pub fn is_one_click(&self) -> bool {
         matches!(self, UnsubscribeMethod::OneClick { .. })
     }
-    
+
     /// Check if any unsubscribe method is available
     pub fn is_available(&self) -> bool {
         !matches!(self, UnsubscribeMethod::None)
@@ -71,7 +71,7 @@ impl UnsubscribeMethod {
 pub struct CleanupAction {
     /// Sender being cleaned
     pub sender: SenderInfo,
-    
+
     /// Action to take
     pub action_type: ActionType,
 }
@@ -82,10 +82,10 @@ pub struct CleanupAction {
 pub enum ActionType {
     /// Unsubscribe via one-click, then delete
     UnsubscribeAndDelete,
-    
+
     /// Move to spam, then delete
     SpamAndDelete,
-    
+
     /// Just delete (user choice)
     DeleteOnly,
 }
@@ -95,16 +95,16 @@ pub enum ActionType {
 pub struct CleanupResult {
     /// Sender email
     pub sender_email: String,
-    
+
     /// Action taken
     pub action: ActionType,
-    
+
     /// Number of messages deleted
     pub messages_deleted: usize,
-    
+
     /// Whether unsubscribe succeeded (if attempted)
     pub unsubscribe_success: Option<bool>,
-    
+
     /// Error message if any
     pub error: Option<String>,
 }
@@ -125,7 +125,7 @@ impl CleanupResult {
             error: None,
         }
     }
-    
+
     /// Create a failed result
     pub fn failure(sender_email: String, action: ActionType, error: String) -> Self {
         Self {
@@ -143,10 +143,10 @@ impl CleanupResult {
 pub struct OAuth2Token {
     /// Access token
     pub access_token: String,
-    
+
     /// Refresh token
     pub refresh_token: String,
-    
+
     /// Token expiry time
     pub expires_at: DateTime<Utc>,
 }

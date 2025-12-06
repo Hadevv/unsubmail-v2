@@ -8,23 +8,23 @@ use url::Url;
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Perform one-click unsubscribe via HTTP POST
-/// 
+///
 /// Security: Only HTTPS URLs are allowed
 pub async fn unsubscribe_one_click(url: &str) -> Result<bool> {
     // Validate URL
     let parsed_url = Url::parse(url).context("Invalid unsubscribe URL")?;
-    
+
     // Security: Only HTTPS
     if parsed_url.scheme() != "https" {
         bail!("Only HTTPS unsubscribe URLs are allowed");
     }
-    
+
     // Create HTTP client
     let client = Client::builder()
         .timeout(REQUEST_TIMEOUT)
         .build()
         .context("Failed to create HTTP client")?;
-    
+
     // Send POST request
     let response = client
         .post(url)
@@ -32,7 +32,7 @@ pub async fn unsubscribe_one_click(url: &str) -> Result<bool> {
         .send()
         .await
         .context("Failed to send unsubscribe request")?;
-    
+
     // Check if successful
     Ok(response.status().is_success())
 }

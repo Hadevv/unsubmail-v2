@@ -1,5 +1,5 @@
 use anyhow::Result;
-use tracing_subscriber::{EnvFilter, fmt};
+use tracing_subscriber::{fmt, EnvFilter};
 use unsubmail::cli;
 
 #[tokio::main]
@@ -11,8 +11,7 @@ async fn main() -> Result<()> {
 
     // Initialize logging
     fmt()
-        .with_env_filter(EnvFilter::from_default_env()
-            .add_directive("unsubmail=info".parse()?))
+        .with_env_filter(EnvFilter::from_default_env().add_directive("unsubmail=info".parse()?))
         .init();
 
     // Always run interactive mode

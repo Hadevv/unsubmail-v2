@@ -33,19 +33,16 @@ async fn main() -> Result<()> {
 
     println!("Step 2: Testing TLS handshake...");
 
-    match tokio::time::timeout(
-        std::time::Duration::from_secs(10),
-        async {
-            let tcp = tokio::net::TcpStream::connect("imap.gmail.com:993")
-                .await
-                .map_err(|e| anyhow::anyhow!("TCP error: {}", e))?;
-            let compat = tcp.compat();
-            let tls = TlsConnector::new();
-            tls.connect("imap.gmail.com", compat)
-                .await
-                .map_err(|e| anyhow::anyhow!("TLS error: {}", e))
-        },
-    )
+    match tokio::time::timeout(std::time::Duration::from_secs(10), async {
+        let tcp = tokio::net::TcpStream::connect("imap.gmail.com:993")
+            .await
+            .map_err(|e| anyhow::anyhow!("TCP error: {}", e))?;
+        let compat = tcp.compat();
+        let tls = TlsConnector::new();
+        tls.connect("imap.gmail.com", compat)
+            .await
+            .map_err(|e| anyhow::anyhow!("TLS error: {}", e))
+    })
     .await
     {
         Ok(Ok(stream)) => {
@@ -54,7 +51,7 @@ async fn main() -> Result<()> {
         }
         Ok(Err(e)) => {
             println!("✗ TLS handshake failed: {}\n", e);
-            return Err(e.into());
+            return Err(e);
         }
         Err(_) => {
             println!("✗ TLS handshake timed out after 10 seconds\n");
@@ -64,21 +61,19 @@ async fn main() -> Result<()> {
 
     println!("Step 3: Creating IMAP client and reading greeting...");
 
-    match tokio::time::timeout(
-        std::time::Duration::from_secs(15),
-        async {
-            let tcp = tokio::net::TcpStream::connect("imap.gmail.com:993")
-                .await
-                .map_err(|e| anyhow::anyhow!("TCP error: {}", e))?;
-            let compat = tcp.compat();
-            let tls = TlsConnector::new();
-            let tls_stream = tls.connect("imap.gmail.com", compat)
-                .await
-                .map_err(|e| anyhow::anyhow!("TLS error: {}", e))?;
-            let client = async_imap::Client::new(tls_stream);
-            Ok::<_, anyhow::Error>(client)
-        },
-    )
+    match tokio::time::timeout(std::time::Duration::from_secs(15), async {
+        let tcp = tokio::net::TcpStream::connect("imap.gmail.com:993")
+            .await
+            .map_err(|e| anyhow::anyhow!("TCP error: {}", e))?;
+        let compat = tcp.compat();
+        let tls = TlsConnector::new();
+        let tls_stream = tls
+            .connect("imap.gmail.com", compat)
+            .await
+            .map_err(|e| anyhow::anyhow!("TLS error: {}", e))?;
+        let client = async_imap::Client::new(tls_stream);
+        Ok::<_, anyhow::Error>(client)
+    })
     .await
     {
         Ok(Ok(_client)) => {

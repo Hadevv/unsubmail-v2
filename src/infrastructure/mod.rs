@@ -27,5 +27,5 @@
 //! - **Testability**: Support mock implementations for testing
 
 pub mod imap;
-pub mod storage;
 pub mod network;
+pub mod storage;
