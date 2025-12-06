@@ -2,61 +2,74 @@
 name = "unsubmail"
 version = "0.1.0"
 edition = "2021"
-authors = ["UnsubMail Contributors"]
-description = "A CLI tool to clean your Gmail inbox from newsletters and spam"
+authors = ["unsubmail contributors"]
+description = "Clean your Gmail inbox from newsletters and spam"
 license = "MIT"
-repository = "https://github.com/yourusername/unsubmail"
+repository = "https://github.com/unsubmail/unsubmail"
+keywords = ["email", "newsletter", "unsubscribe", "gmail", "cli"]
+categories = ["command-line-utilities"]
 
 [dependencies]
-# CLI & TUI
-clap = { version = "4.5", features = ["derive"] }
-dialoguer = "0.11"
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.7", features = ["compat"] }
+futures = "0.3"
+
+# IMAP client (async)
+async-imap = "0.9"
+async-native-tls = "0.5"
+
+# OAuth2
+oauth2 = "4.4"
+
+# HTTP client for one-click unsubscribe
+reqwest = { version = "0.12", features = ["json"] }
+
+# CLI framework
+clap = { version = "4", features = ["derive"] }
+inquire = "0.7"
+
+# Progress and output
 indicatif = "0.17"
 console = "0.15"
 
-# Async runtime
-tokio = { version = "1.40", features = ["full"] }
-tokio-stream = "0.1"
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
-# HTTP client
-reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
-hyper = { version = "1.0", features = ["client", "http1"] }
-hyper-util = { version = "0.1", features = ["client-legacy", "http1", "tokio"] }
-hyper-rustls = { version = "0.27", features = ["http1", "native-tokio", "ring"], default-features = false }
-rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-ring = "0.17"
+# Configuration storage
+confy = "0.6"
+directories = "5"
 
-# Google OAuth2 & API
-google-gmail1 = "6.0"
-yup-oauth2 = "11.0"
-
-# Storage
-keyring = "3.6"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
+# Parallel processing
+rayon = "1.10"
 
 # Error handling
-anyhow = "1.0"
-thiserror = "2.0"
+anyhow = "1"
+thiserror = "1"
 
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
-# Utilities
-chrono = { version = "0.4", features = ["serde"] }
-url = "2.5"
-base64 = "0.22"
+# Email parsing
 mailparse = "0.15"
-dirs = "5.0"
+regex = "1"
+
+# Date/time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Base64 for SASL
+base64 = "0.22"
+
+# URL parsing
+url = "2"
+
+# Environment variables
 dotenvy = "0.15"
-futures = "0.3.31"
+
+# Open browser
+open = "5"
 
 [dev-dependencies]
-mockito = "1.5"
-
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-strip = true
+tokio-test = "0.4"
