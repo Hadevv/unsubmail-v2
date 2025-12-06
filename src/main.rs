@@ -1,10 +1,6 @@
-pub mod cli;
-pub mod domain;
-pub mod infrastructure;
-pub mod application;
-
 use anyhow::Result;
 use tracing_subscriber::{EnvFilter, fmt};
+use unsubmail::cli;
 
 #[tokio::main]
 async fn main() -> Result<()> {
