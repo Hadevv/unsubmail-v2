@@ -9,6 +9,14 @@ repository = "https://github.com/unsubmail/unsubmail"
 keywords = ["email", "newsletter", "unsubscribe", "gmail", "cli"]
 categories = ["command-line-utilities"]
 
+[lib]
+name = "unsubmail"
+path = "src/lib.rs"
+
+[[bin]]
+name = "unsubmail"
+path = "src/main.rs"
+
 [dependencies]
 # Async runtime
 tokio = { version = "1", features = ["full"] }

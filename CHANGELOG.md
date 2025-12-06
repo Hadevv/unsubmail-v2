@@ -1,210 +1,154 @@
-# Changelog - UnsubMail v2
+# Changelog
 
-## [2024-12-02] - Implémentation des améliorations majeures
+All notable changes to UnsubMail will be documented in this file.
 
-### 🔧 Corrections OAuth2
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-**Problème identifié:**
-- Le flux OAuth2 affichait "Your browser will open" mais ne l'ouvrait jamais automatiquement
-- Aucune URL n'était affichée pour que l'utilisateur puisse se connecter manuellement
-- L'utilisateur restait bloqué après avoir vu "Listening on http://localhost:9090"
+## [Unreleased]
 
-**Solution implémentée:**
-- Changement de `InstalledFlowReturnMethod::HTTPRedirect` à `InstalledFlowReturnMethod::Interactive`
-- Le navigateur s'ouvre maintenant automatiquement pour l'authentification
-- Messages d'instruction améliorés pour guider l'utilisateur
+### Added
+- Interactive loop mode: Continue cleaning from same account or switch accounts
+- Comprehensive README.md with installation, configuration, and usage guide
+- CONTRIBUTING.md with development guidelines and coding standards
+- GitHub CI/CD workflow with multi-platform testing (Linux, macOS, Windows)
+- GitHub issue templates (bug report, feature request)
+- GitHub pull request template
+- Comprehensive module-level documentation for all layers
+- Integration tests for domain logic
+- Example programs: `simple_scan.rs` and `batch_cleanup.rs`
+- Improved .gitignore with coverage and build artifacts
 
-**Fichier modifié:** `src/infrastructure/google/auth.rs:55`
+### Changed
+- Enhanced interactive mode with account switching capability
+- Updated documentation structure across all modules
+- Improved error messages and user feedback
 
----
+## [0.1.0] - 2024-12-02 - Initial Implementation
 
-### ⚡ Performance - Fetching parallèle des messages
+### Added
+- Clean architecture implementation with 4 layers (domain, application, infrastructure, CLI)
+- OAuth2 authentication flow with automatic browser opening
+- IMAP-based Gmail inbox scanning
+- Newsletter detection using multiple heuristics:
+  - RFC 2369 List-Unsubscribe header detection
+  - RFC 8058 One-click unsubscribe support
+  - Email pattern matching (newsletter@, noreply@, etc.)
+  - Message volume analysis
+  - Heuristic scoring system
+- Interactive terminal UI with progress indicators
+- Batch message operations (scan, delete, move to spam)
+- Secure token storage in OS keyring
+- One-click HTTP POST unsubscribe
+- Parallel message fetching with semaphore-based rate limiting
 
-**Amélioration:**
-- Implémentation du fetching parallèle des headers de messages
-- Utilisation de `tokio::spawn` pour traiter jusqu'à 10 requêtes simultanément
-- Réduction significative du temps de scan pour les grandes boîtes mail
+### Features
+- **Smart Detection**: Advanced heuristics for newsletter identification
+- **One-Click Unsubscribe**: RFC 8058 automated unsubscribe
+- **OAuth2 Security**: No password storage, uses OS keyring
+- **Fast Scanning**: Headers-only, parallel fetching
+- **Interactive TUI**: Beautiful terminal interface with `inquire` and `indicatif`
+- **Batch Operations**: Efficiently process hundreds of emails
 
-**Détails techniques:**
-- Semaphore pour limiter la concurrence (max 10 requêtes simultanées)
-- Utilisation de `futures::future::join_all` pour attendre toutes les tâches
-- Gestion gracieuse des erreurs individuelles sans bloquer le batch
+### Technical Implementation
+- Async/await with Tokio runtime
+- IMAP via `async-imap` crate
+- OAuth2 via `oauth2` crate
+- Clean architecture with dependency inversion
+- Type-safe domain models
+- Comprehensive error handling with `anyhow` and `thiserror`
 
-**Fichier modifié:** `src/infrastructure/google/gmail_api.rs:73-149`
+### Performance
+- Parallel message fetching (up to 10 concurrent requests)
+- Exponential backoff for rate limiting
+- Headers-only scanning (no message bodies downloaded)
+- Expected scan time:
+  - 500 messages: ~5-10 seconds
+  - 2000 messages: ~20-40 seconds
 
-**Avant:**
-```rust
-// Fetching séquentiel
-for id in message_ids {
-    let header = get_message_headers(user_id, id).await?;
-    headers.push(header);
-}
-```
+### Security
+- OAuth2 authentication only (no passwords)
+- Tokens stored securely in OS keyring:
+  - macOS: Keychain
+  - Windows: Credential Manager
+  - Linux: Secret Service
+- HTTPS-only unsubscribe links
+- mailto: links explicitly rejected
 
-**Après:**
-```rust
-// Fetching parallèle avec limite de concurrence
-let semaphore = Arc::new(Semaphore::new(10));
-let tasks: Vec<_> = message_ids
-    .iter()
-    .map(|id| tokio::spawn(fetch_with_permit(id, semaphore)))
-    .collect();
-let results = join_all(tasks).await;
-```
+### Dependencies
+- `tokio` - Async runtime
+- `async-imap` - Gmail IMAP client
+- `oauth2` - OAuth2 authentication
+- `inquire` - Interactive prompts
+- `indicatif` - Progress bars
+- `serde` + `serde_json` - Serialization
+- `anyhow` + `thiserror` - Error handling
+- `mailparse` - RFC 2822 date parsing
+- `reqwest` - HTTP client for unsubscribe
+- `regex` - Pattern matching
+- `chrono` - Date/time handling
 
----
+### Known Limitations
+- Gmail only (no other providers)
+- OAuth2 credentials must be manually created
+- No undo functionality
+- One-click unsubscribe depends on sender support
+- Windows requires Visual Studio Build Tools for ring crypto
 
-### 🛡️ Rate Limiting & Exponential Backoff
+### Documentation
+- CLAUDE.md with architecture and design principles
+- Inline documentation for all public APIs
+- Examples for testing and debugging
 
-**Amélioration:**
-- Ajout d'un système de retry avec exponential backoff
-- Gestion automatique des erreurs 429 (rate limit) et 503 (service unavailable)
-- Protection contre les bans temporaires de l'API Gmail
+## [Pre-release] - 2024-12-01
 
-**Détails techniques:**
-- Max 3 retries par requête
-- Délai initial de 100ms, doublé à chaque retry (100ms → 200ms → 400ms)
-- Détection intelligente des erreurs temporaires vs erreurs permanentes
-
-**Fichier modifié:** `src/infrastructure/google/gmail_api.rs:95-134`
-
-**Flux de retry:**
-1. Requête initiale
-2. Si erreur 429/503/timeout → Attendre 100ms et retry
-3. Si encore erreur → Attendre 200ms et retry
-4. Si encore erreur → Attendre 400ms et retry
-5. Si échec final → Log warning et continue avec les autres messages
-
----
-
-### 📅 Parsing des dates RFC 2822
-
-**Amélioration:**
-- Implémentation complète du parsing des dates d'email
-- Utilisation de `mailparse::dateparse` pour gérer tous les formats RFC 2822
-- Conversion correcte en `DateTime<Utc>`
-
-**Fichier modifié:** `src/infrastructure/google/gmail_api.rs:163-178`
-
-**Avant:**
-```rust
-fn parse_email_date(_date_str: &str) -> Option<DateTime<Utc>> {
-    // TODO: Implement proper RFC 2822 date parsing
-    None
-}
-```
-
-**Après:**
-```rust
-fn parse_email_date(date_str: &str) -> Option<DateTime<Utc>> {
-    use mailparse::dateparse;
-    match dateparse(date_str) {
-        Ok(timestamp) => DateTime::from_timestamp(timestamp, 0),
-        Err(e) => {
-            tracing::debug!("Failed to parse date '{}': {}", date_str, e);
-            None
-        }
-    }
-}
-```
-
----
-
-### ✅ Tests
-
-**Ajouts:**
-- Création du dossier `tests/` pour les tests d'intégration
-- Fichier `tests/domain_tests.rs` avec tests unitaires pour:
-  - Détection de newsletters via `List-Unsubscribe`
-  - Détection du one-click unsubscribe
-  - Scoring basé sur le nombre de messages
-  - Détection des patterns d'email (newsletter@, noreply@, etc.)
-  - Groupement des senders
-
-**Fichier créé:** `tests/domain_tests.rs`
+### Initial Development
+- Project structure setup
+- Domain model design
+- Infrastructure layer implementation
+- Basic IMAP connection tests
 
 ---
 
-### 📚 Structure du projet
+## Versioning Strategy
 
-**Ajouts:**
-- Création de `src/lib.rs` pour exposer les modules publics
-- Permet maintenant d'utiliser `unsubmail` comme bibliothèque
-- Facilite les tests d'intégration
+- **Major version (X.0.0)**: Breaking changes, major architecture changes
+- **Minor version (0.X.0)**: New features, backward-compatible changes
+- **Patch version (0.0.X)**: Bug fixes, documentation updates
 
----
+## Release Process
 
-## Dépendances ajoutées
+1. Update CHANGELOG.md with release notes
+2. Update version in Cargo.toml
+3. Run full test suite: `cargo test`
+4. Build release: `cargo build --release`
+5. Tag release: `git tag -a vX.Y.Z -m "Release X.Y.Z"`
+6. Push tag: `git push origin vX.Y.Z`
+7. Create GitHub release with binaries
 
-- `futures = "0.3.31"` - Pour le fetching parallèle avec `join_all`
+## Future Roadmap
 
----
+### v0.2.0 (Planned)
+- [ ] Dry-run mode (preview without executing)
+- [ ] Export results to JSON/CSV
+- [ ] Improved error recovery and retry logic
+- [ ] Configuration file support
+- [ ] Account management improvements
 
-## Métriques de performance attendues
+### v0.3.0 (Planned)
+- [ ] Support for other email providers (Outlook, Yahoo)
+- [ ] Web UI for remote management
+- [ ] Scheduled cleanup jobs
+- [ ] Email template recognition
+- [ ] Advanced filtering rules
 
-**Avant (séquentiel):**
-- 500 messages : ~50-60 secondes
-- 2000 messages : ~3-4 minutes
-
-**Après (parallèle, 10 concurrent):**
-- 500 messages : ~5-10 secondes (amélioration de 80-90%)
-- 2000 messages : ~20-40 secondes (amélioration de 83-90%)
-
----
-
-## Build
-
-**Version release compilée avec succès:**
-```bash
-cargo build --release
-# Finished `release` profile [optimized] target(s) in 1m 39s
-```
-
-**Avertissements:**
-- Méthode `get_message_headers` non utilisée (conservée pour usage futur)
-- Quelques imports `use super::*` non utilisés dans les tests
-
----
-
-## Prochaines étapes recommandées
-
-1. **Tests manuels avec vraie boîte Gmail:**
-   - Tester le flux OAuth2 complet
-   - Vérifier le fetching parallèle avec >500 messages
-   - Confirmer que le rate limiting fonctionne
-
-2. **Améliorations futures possibles:**
-   - Ajouter une barre de progression pour le fetching parallèle
-   - Implémenter un cache local pour réduire les appels API
-   - Ajouter des métriques de performance dans les logs
-
-3. **Documentation:**
-   - Ajouter des exemples d'utilisation dans README.md
-   - Documenter les variables d'environnement nécessaires
-   - Créer un guide de contribution
+### v1.0.0 (Future)
+- [ ] Production-ready stability
+- [ ] Comprehensive test coverage (>80%)
+- [ ] Full documentation and guides
+- [ ] Multi-language support
+- [ ] Enterprise features
 
 ---
 
-## Notes techniques
-
-**Rate limits Gmail API:**
-- 250 quota units/seconde/utilisateur
-- 1 requête `messages.get` = 5 quota units
-- Avec 10 requêtes parallèles: ~50 units/batch
-- Limite théorique: ~5 batchs/seconde = ~50 messages/seconde
-
-**Concurrence choisie:**
-- 10 requêtes simultanées = bon compromis entre vitesse et rate limiting
-- Ajustable via `Semaphore::new(N)` si besoin
-
----
-
-## État du projet
-
-✅ OAuth2 fonctionnel avec ouverture automatique du navigateur
-✅ Scan parallèle avec rate limiting
-✅ Parsing des dates RFC 2822
-✅ Tests unitaires pour la logique métier
-✅ Build release réussi
-⚠️ Tests d'intégration à compléter (problème d'espace disque)
-📝 Documentation à étendre
+For the latest updates, see [GitHub Releases](https://github.com/unsubmail/unsubmail/releases).

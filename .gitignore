@@ -1,33 +1,67 @@
-# Rust
+# Rust build artifacts
 /target/
 **/*.rs.bk
 *.pdb
-Cargo.lock
 
-# IDE
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+*.iml
 
-# OS
+# OS files
 .DS_Store
 Thumbs.db
+desktop.ini
 
-# User data
+# User data and secrets
 accounts.json
 *.token
 .credentials/
+tokens/
 
-# Environment
+# Environment variables
 .env
 .env.local
+.env.*.local
+
+# Test output and logs
+*.log
+test_output.txt
+run_output.txt
+check_output*.txt
+build_errors.txt
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+
+# Configuration that shouldn't be committed
+config.local.toml
 
 # MCP & Claude
 .mcp.json
 .claude/
 .claude/settings.local.json
+.
 
 # Mutation testing
 **/mutants.out*/
+
+# Code coverage
+*.profraw
+*.profdata
+/coverage/
+cobertura.xml
+lcov.info
+
+# Documentation build
+/docs/_build/
+/book/
+
+# Backup files
+*.bak
+*.backup
