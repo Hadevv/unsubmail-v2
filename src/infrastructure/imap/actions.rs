@@ -4,35 +4,44 @@ use super::connection::ImapSession;
 use anyhow::{Context, Result};
 use futures::TryStreamExt;
 
-/// Delete messages by UIDs
+/// Delete messages by UIDs using Gmail's trash label
 pub async fn delete_messages(session: &mut ImapSession, uids: &[u32]) -> Result<usize> {
     if uids.is_empty() {
         return Ok(0);
     }
 
     let uid_set = format_uid_set(uids);
-    
-    // Mark as deleted and consume stream
-    {
-        let _: Vec<_> = session
-            .uid_store(&uid_set, "+FLAGS.SILENT (\\Deleted)")
-            .await
-            .context("Failed to mark messages as deleted")?
-            .try_collect()
-            .await?;
-    }
-    
-    // Expunge to permanently delete and consume stream
-    {
-        let _: Vec<_> = session
-            .expunge()
-            .await
-            .context("Failed to expunge deleted messages")?
-            .try_collect()
-            .await?;
-    }
-    
-    Ok(uids.len())
+    let count = uids.len();
+
+    // Ensure INBOX is selected (critical for IMAP operations)
+    session
+        .select("INBOX")
+        .await
+        .context("Failed to select INBOX")?;
+
+    // Move messages to Gmail's Trash folder (more reliable than \Deleted flag)
+    session
+        .uid_copy(&uid_set, "[Gmail]/Trash")
+        .await
+        .context("Failed to move messages to trash")?;
+
+    // Mark as deleted in INBOX
+    let _: Vec<_> = session
+        .uid_store(&uid_set, "+FLAGS.SILENT (\\Deleted)")
+        .await
+        .context("Failed to mark messages as deleted")?
+        .try_collect()
+        .await?;
+
+    // Expunge to permanently remove from INBOX
+    let _: Vec<_> = session
+        .expunge()
+        .await
+        .context("Failed to expunge deleted messages")?
+        .try_collect()
+        .await?;
+
+    Ok(count)
 }
 
 /// Move messages to spam folder
@@ -42,37 +51,37 @@ pub async fn move_to_spam(session: &mut ImapSession, uids: &[u32]) -> Result<usi
     }
 
     let uid_set = format_uid_set(uids);
-    
-    // Gmail uses [Gmail]/Spam
-    {
-        session
-            .uid_copy(&uid_set, "[Gmail]/Spam")
-            .await
-            .context("Failed to copy messages to spam")?;
-            
-        // uid_copy returns Result<()>, not a stream
-    }
-    
-    // Delete from inbox (inline to ensure no borrow issues)
-    {
-        let _: Vec<_> = session
-            .uid_store(&uid_set, "+FLAGS.SILENT (\\Deleted)")
-            .await
-            .context("Failed to mark messages as deleted")?
-            .try_collect()
-            .await?;
-    }
-    
-    {
-        let _: Vec<_> = session
-            .expunge()
-            .await
-            .context("Failed to expunge deleted messages")?
-            .try_collect()
-            .await?;
-    }
-    
-    Ok(uids.len())
+    let count = uids.len();
+
+    // Ensure INBOX is selected
+    session
+        .select("INBOX")
+        .await
+        .context("Failed to select INBOX")?;
+
+    // Copy messages to Gmail's Spam folder
+    session
+        .uid_copy(&uid_set, "[Gmail]/Spam")
+        .await
+        .context("Failed to copy messages to spam")?;
+
+    // Mark as deleted in INBOX
+    let _: Vec<_> = session
+        .uid_store(&uid_set, "+FLAGS.SILENT (\\Deleted)")
+        .await
+        .context("Failed to mark messages as deleted")?
+        .try_collect()
+        .await?;
+
+    // Expunge to remove from INBOX
+    let _: Vec<_> = session
+        .expunge()
+        .await
+        .context("Failed to expunge deleted messages")?
+        .try_collect()
+        .await?;
+
+    Ok(count)
 }
 
 /// Format UIDs for IMAP command
